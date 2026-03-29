@@ -1,0 +1,1987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nepturns — Carousel Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,700&family=Barlow:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #111111;
+    --card: #1a1a1a;
+    --border: #2a2a2a;
+    --red: #C8341A;
+    --red-dim: #7a1f0f;
+    --white: #FFFFFF;
+    --gray: #888888;
+    --light: #cccccc;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--white);
+    font-family: 'Barlow', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .logo { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 800; letter-spacing: 2px; }
+  .logo span { color: var(--red); }
+  .nav-tag { font-size: 11px; font-weight: 600; letter-spacing: 3px; color: rgba(255, 255, 255, 0.55); text-transform: uppercase; }
+
+  .app { display: grid; grid-template-columns: 420px 1fr; flex: 1; min-height: 0; overflow: hidden; }
+
+  /* LEFT PANEL */
+  .panel {
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: calc(100vh - 61px);
+  }
+
+  .template-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .tab {
+    padding: 12px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.55);
+    font-family: 'Barlow', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all .2s;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .tab.active { border-color: var(--red); color: var(--white); background: rgba(200,52,26,0.08); }
+  .tab:hover:not(.active) { border-color: #444; color: #ffffff; }
+
+  .section-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 10px;
+  }
+
+  .field-group { display: flex; flex-direction: column; gap: 4px; }
+  .field-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.78);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  input[type="text"], textarea, select {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--white);
+    font-family: 'Barlow', sans-serif;
+    font-size: 14px;
+    padding: 10px 12px;
+    width: 100%;
+    transition: border-color .2s;
+    resize: vertical;
+  }
+  input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--red); }
+  textarea { min-height: 70px; }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .toggle-label { font-size: 13px; font-weight: 500; color: rgba(255, 255, 255, 0.9); }
+  .toggle {
+    width: 40px; height: 22px;
+    background: var(--border);
+    border-radius: 11px;
+    position: relative;
+    cursor: pointer;
+    transition: background .2s;
+    border: none;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--red); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    background: white;
+    border-radius: 50%;
+    top: 3px; left: 3px;
+    transition: transform .2s;
+  }
+  .toggle.on::after { transform: translateX(18px); }
+
+  .points-list { display: flex; flex-direction: column; gap: 8px; }
+  .point-num-badge {
+    width: 24px; height: 24px;
+    background: var(--red);
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 700;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 8px;
+  }
+
+  .add-point {
+    background: transparent;
+    border: 1px dashed var(--border);
+    color: rgba(255, 255, 255, 0.65);
+    border-radius: 6px;
+    padding: 8px;
+    width: 100%;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: 'Barlow', sans-serif;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all .2s;
+    margin-top: 4px;
+  }
+  .add-point:hover { border-color: var(--red); color: var(--red); }
+
+  .divider { border: none; border-top: 1px solid var(--border); }
+
+  .btn-generate {
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 14px 24px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    width: 100%;
+    transition: background .2s;
+    flex-shrink: 0;
+  }
+  .btn-generate:hover { background: #a82b15; }
+  .btn-generate:disabled { background: #444; cursor: not-allowed; }
+
+  .slide-count-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--card);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .slide-count-label { font-size: 12px; color: rgba(255, 255, 255, 0.65); }
+  .slide-count-num { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; color: var(--red); }
+
+  /* RIGHT PANEL */
+  .preview-panel {
+    overflow-y: auto;
+    padding: 28px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    height: calc(100vh - 61px);
+  }
+
+  .preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .preview-title {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.7);
+  }
+  .btn-download {
+    background: transparent;
+    border: 1px solid var(--red);
+    color: var(--red);
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all .2s;
+    display: none;
+  }
+  .btn-download:hover { background: var(--red); color: white; }
+  .btn-download.visible { display: block; }
+
+  .slides-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 20px;
+  }
+
+  .slide-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .slide-label-preview {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.55);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .slide-preview-box {
+    width: 100%;
+    aspect-ratio: 4/5;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+
+  /* Scale wrapper: 1080x1350 → displayed at ~240px wide */
+  .slide-scale-wrap {
+    width: 270px;
+    height: 337.5px;
+    position: relative;
+    overflow: hidden;
+    transform-origin: top left;
+  }
+  .slide-canvas {
+    width: 1080px;
+    height: 1350px;
+    transform-origin: top left;
+    transform: scale(0.25);
+    position: absolute;
+    top: 0; left: 0;
+  }
+
+  /* Empty state */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+    gap: 16px;
+    color: rgba(255, 255, 255, 0.75);
+    text-align: center;
+  }
+  .empty-icon {
+    width: 60px; height: 60px;
+    border: 2px dashed var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+  }
+  .empty-title { font-size: 16px; font-weight: 600; color: #ffffff; }
+  .empty-desc { font-size: 13px; color: rgba(255, 255, 255, 0.7); max-width: 260px; line-height: 1.5; }
+
+  .status-bar {
+    padding: 10px 16px;
+    background: rgba(200,52,26,0.1);
+    border: 1px solid var(--red-dim);
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--red);
+    text-align: center;
+    display: none;
+  }
+  .status-bar.visible { display: block; }
+
+  .export-progress-wrap {
+    display: none;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .export-progress-wrap.visible { display: block; }
+  .export-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--red);
+    border-radius: 3px;
+    transition: width 0.15s ease-out;
+  }
+
+  .order-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .order-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.88);
+    cursor: grab;
+    user-select: none;
+  }
+  .order-item:active { cursor: grabbing; }
+  .order-item.drag-over { border-color: var(--red); background: rgba(200,52,26,0.12); }
+  .order-hint { font-size: 11px; color: rgba(255, 255, 255, 0.62); margin-top: 6px; line-height: 1.4; }
+
+  .typo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px 14px;
+    margin-top: 10px;
+  }
+  .typo-grid .mini-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.72);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    display: block;
+  }
+  .typo-grid input[type="number"] {
+    width: 100%;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  .typo-section-note {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 6px 0 10px;
+    line-height: 1.4;
+  }
+
+  /* ══════════════════════════════════════
+     SLIDE STYLES — 1080 × 1350
+  ══════════════════════════════════════ */
+  .slide {
+    width: 1080px;
+    height: 1350px;
+    background: #0d0d0d;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Barlow', sans-serif;
+    --sr: 248px;
+  }
+  .slide.slide--no-side {
+    --sr: 72px;
+  }
+  .slide.slide--no-side .s-side-panel,
+  .slide.slide--no-side .s-panel-arrow {
+    display: none !important;
+  }
+  .slide.slide--no-side .s-brush-top,
+  .slide.slide--no-side .s-brush-bottom {
+    right: 0 !important;
+  }
+
+  /* Chrome above full-bleed CTA body */
+  .s-brush-top,
+  .s-brush-bottom,
+  .s-side-panel,
+  .s-panel-arrow,
+  .s-handle,
+  .s-pie,
+  .s-corner,
+  .s-swipe,
+  .s-chrome-rail,
+  .s-chrome-dots,
+  .s-footer {
+    z-index: 20;
+  }
+
+  /* Red side panel — horizontal type rotated -90° (exports reliably; avoid vertical-rl + rotate) */
+  .s-side-panel {
+    position: absolute;
+    right: 0; top: 0;
+    width: 210px; height: 100%;
+    background: var(--red);
+  }
+  .s-side-label-wrap {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .s-side-label-text {
+    display: block;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: var(--fs-side-label, 36px);
+    font-weight: 800;
+    font-style: normal;
+    color: #0a0a0a;
+    line-height: 1.05;
+    letter-spacing: var(--side-label-tracking, 6px);
+    text-transform: uppercase;
+    white-space: nowrap;
+    text-align: center;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: geometricPrecision;
+    transform: rotate(-90deg);
+    transform-origin: center center;
+    max-width: 1180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .s-panel-arrow {
+    position: absolute;
+    right: 210px; top: 50%;
+    transform: translateY(-50%);
+    width: 0; height: 0;
+    border-top: 72px solid transparent;
+    border-bottom: 72px solid transparent;
+    border-right: 56px solid var(--red);
+  }
+
+  /* Brush strokes top/bottom */
+  .s-brush-top {
+    position: absolute;
+    top: 0; left: 0; right: 210px; height: 10px;
+    background: var(--red); opacity: 0.9;
+    clip-path: polygon(0 0,100% 0,98% 40%,97% 100%,95% 60%,93% 100%,91% 50%,89% 100%,86% 40%,84% 100%,82% 60%,80% 100%,78% 50%,75% 100%,72% 40%,70% 100%,0 100%);
+  }
+  .s-brush-bottom {
+    position: absolute;
+    bottom: 0; left: 0; right: 210px; height: 10px;
+    background: var(--red); opacity: 0.9;
+    clip-path: polygon(0 100%,100% 100%,98% 60%,97% 0,95% 40%,93% 0,91% 50%,89% 0,86% 60%,84% 0,82% 40%,80% 0,78% 50%,75% 0,72% 60%,70% 0,0 0);
+  }
+
+  /* Handle & counter */
+  .s-handle {
+    position: absolute;
+    top: 58px; left: 72px;
+    font-family: 'Barlow', sans-serif;
+    font-size: var(--fs-handle, 26px);
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 1px;
+  }
+
+  /* Pie progress — single progress indicator (top right) */
+  .s-pie {
+    position: absolute;
+    top: 52px;
+    bottom: auto;
+    right: var(--sr);
+  }
+
+  /* Corner bracket */
+  .s-corner {
+    position: absolute;
+    bottom: 110px; right: calc(var(--sr) - 8px);
+    width: 40px; height: 40px;
+    border-right: 3px solid rgba(200,52,26,0.4);
+    border-bottom: 3px solid rgba(200,52,26,0.4);
+  }
+
+  /* Swipe hint */
+  .s-swipe {
+    position: absolute;
+    bottom: 184px; left: 72px;
+    display: flex; align-items: center; gap: 16px;
+    color: rgba(200,52,26,0.7);
+  }
+  .s-swipe-line { width: 64px; height: 2px; background: rgba(200,52,26,0.7); }
+  .s-swipe-arrow { font-size: var(--fs-swipe, 28px); color: rgba(200,52,26,0.95); }
+
+  /* Subtle rail + dots (creative chrome, not on minimal CTA last slide) */
+  .s-chrome-rail {
+    position: absolute;
+    left: 0;
+    top: 120px;
+    bottom: 200px;
+    width: 4px;
+    background: linear-gradient(180deg, var(--red) 0%, transparent 55%, rgba(200,52,26,0.25) 100%);
+    opacity: 0.85;
+  }
+  .s-chrome-dots {
+    position: absolute;
+    left: 72px;
+    top: 118px;
+    display: flex;
+    gap: 8px;
+  }
+  .s-chrome-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(200,52,26,0.45);
+  }
+  .slide--last .s-corner {
+    display: none;
+  }
+
+  /* Footer */
+  .s-footer {
+    position: absolute;
+    bottom: 44px; left: 72px; right: var(--sr);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .s-footer-text {
+    font-family: 'Playfair Display', serif;
+    font-size: var(--fs-footer-text, 20px);
+    font-style: italic;
+    color: #ffffff;
+  }
+  .s-footer-handle {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: var(--fs-footer-handle, 22px);
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  /* ── FIRST SLIDE (Cover) — flex stack so eyebrow size never overlaps headline ── */
+  .s-cover-main {
+    position: absolute;
+    left: 72px;
+    right: var(--sr);
+    top: 148px;
+    bottom: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: clamp(20px, 28px, 40px);
+    z-index: 1;
+  }
+  .s-cover-accent {
+    flex-shrink: 0;
+    width: 56px;
+    height: 3px;
+    background: var(--red);
+  }
+  .s-cover-eyebrow {
+    flex-shrink: 0;
+    max-width: 100%;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: var(--fs-eyebrow, 32px);
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--red);
+    letter-spacing: 5px;
+    text-transform: uppercase;
+  }
+  .s-cover-headline {
+    flex: 0 1 auto;
+    width: 100%;
+    min-height: 0;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: var(--fs-cover-headline, 106px);
+    font-weight: 900;
+    color: white;
+    line-height: 0.92;
+    text-transform: uppercase;
+    letter-spacing: -2px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .s-cover-sub {
+    flex-shrink: 0;
+    margin-top: auto;
+    width: 100%;
+    padding-top: 8px;
+    font-family: 'Barlow', sans-serif;
+    font-size: var(--fs-cover-sub, 34px);
+    font-weight: 400;
+    color: #ffffff;
+    line-height: 1.4;
+    word-wrap: break-word;
+  }
+  .s-cover-ghost {
+    position: absolute;
+    bottom: 220px;
+    right: calc(var(--sr) - 18px);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: var(--fs-cover-ghost, 320px);
+    font-weight: 900;
+    color: rgba(200,52,26,0.06);
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+  }
+
+  /* ── MIDDLE SLIDE styles ── */
+
+  /* Statement point slide */
+  .s-pt-ghost {
+    position: absolute;
+    top: 120px;
+    left: 40px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: var(--fs-pt-ghost, 260px);
+    font-weight: 900;
+    color: rgba(200, 52, 26, 0.22);
+    line-height: 1;
+    letter-spacing: -12px;
+    pointer-events: none;
+    text-shadow: 0 0 40px rgba(0, 0, 0, 0.45);
+  }
+  .s-pt-title {
+    position: absolute;
+    top: 270px; left: 72px; right: var(--sr);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: var(--fs-pt-title, 88px); font-weight: 800;
+    color: white; line-height: 0.95; text-transform: uppercase;
+  }
+  .s-pt-divider {
+    position: absolute;
+    top: 640px; left: 72px;
+    width: 88px; height: 4px; background: var(--red);
+  }
+  .s-pt-body {
+    position: absolute;
+    top: 672px; left: 72px; right: var(--sr);
+    font-family: 'Barlow', sans-serif;
+    font-size: var(--fs-pt-body, 38px); font-weight: 400;
+    color: #ffffff;
+    line-height: 1.45;
+  }
+
+  /* Honest take */
+  .s-honest-bar {
+    position: absolute;
+    top: 158px; left: 72px; right: var(--sr);
+    height: 4px; background: var(--red);
+  }
+  .s-honest-label {
+    position: absolute;
+    top: 186px; left: 72px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: var(--fs-honest-label, 22px); font-weight: 700;
+    color: var(--red); letter-spacing: 5px; text-transform: uppercase;
+  }
+  .s-honest-text {
+    position: absolute;
+    top: 258px; left: 72px; right: var(--sr);
+    font-family: 'Barlow', sans-serif;
+    font-size: var(--fs-honest, 46px); font-weight: 400;
+    color: white; line-height: 1.35;
+  }
+
+  /* ── LAST SLIDE (CTA) — minimal, same dark canvas as other slides; no side bar in chrome ── */
+  .s-cta-min {
+    position: absolute;
+    left: 72px;
+    right: 72px;
+    top: 130px;
+    bottom: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 32px;
+    z-index: 1;
+  }
+  .s-cta-min-topbar {
+    width: 64px;
+    height: 4px;
+    background: var(--red);
+    flex-shrink: 0;
+  }
+  .s-cta-min-q {
+    font-family: 'Playfair Display', serif;
+    font-size: var(--fs-cta-main, 54px);
+    font-style: italic;
+    font-weight: 600;
+    color: #ffffff;
+    line-height: 1.22;
+    margin: 0;
+    max-width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .s-cta-min-divider {
+    height: 1px;
+    max-width: min(100%, 420px);
+    background: linear-gradient(90deg, var(--red), transparent);
+    opacity: 0.55;
+    flex-shrink: 0;
+  }
+  .s-cta-min-action {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: var(--fs-cta-action, 52px);
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    line-height: 1.12;
+    margin: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .s-cta-min-sub {
+    font-family: 'Barlow', sans-serif;
+    font-size: var(--fs-cta-sub, 30px);
+    font-weight: 400;
+    color: #ffffff;
+    line-height: 1.5;
+    opacity: 0.92;
+    margin: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .s-cta-min-accent {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 100px;
+    height: 100px;
+    border-right: 2px solid rgba(200, 52, 26, 0.4);
+    border-bottom: 2px solid rgba(200, 52, 26, 0.4);
+    pointer-events: none;
+    opacity: 0.9;
+  }
+
+  /* ── STORY COVER — flex stack (eyebrow / lines scale safely) ── */
+  .s-story-cover {
+    position: absolute;
+    left: 72px;
+    right: var(--sr);
+    top: 148px;
+    bottom: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: clamp(16px, 22px, 32px);
+    z-index: 1;
+  }
+  .s-story-cover .s-cover-accent {
+    margin-bottom: 4px;
+  }
+  .s-story-eyebrow {
+    flex-shrink: 0;
+    max-width: 100%;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: var(--fs-story-eyebrow, 28px);
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--red);
+    letter-spacing: 5px;
+    text-transform: uppercase;
+  }
+  .s-story-headline {
+    flex-shrink: 0;
+    width: 100%;
+    font-family: 'Playfair Display', serif;
+    font-size: var(--fs-story-h, 86px);
+    font-weight: 700;
+    font-style: italic;
+    color: white;
+    line-height: 1.05;
+    word-wrap: break-word;
+  }
+  .s-story-big {
+    flex: 0 1 auto;
+    width: 100%;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: var(--fs-story-big, 128px);
+    font-weight: 900;
+    color: var(--red);
+    line-height: 0.9;
+    text-transform: uppercase;
+    word-wrap: break-word;
+  }
+  .s-story-sub {
+    flex-shrink: 0;
+    margin-top: auto;
+    width: 100%;
+    padding-top: 12px;
+    font-family: 'Playfair Display', serif;
+    font-size: var(--fs-story-sub, 50px);
+    font-style: italic;
+    color: white;
+    line-height: 1.2;
+    word-wrap: break-word;
+  }
+  .s-story-box {
+    position: absolute;
+    bottom: 238px; left: 72px; right: calc(var(--sr) + 14px);
+    border: 2px solid var(--red);
+    padding: 34px 38px;
+  }
+  .s-story-box-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: var(--fs-box-label, 20px);
+    font-weight: 700;
+    color: var(--red);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .s-story-box-text {
+    font-family: 'Barlow', sans-serif;
+    font-size: var(--fs-box-text, 34px);
+    font-weight: 600;
+    color: #ffffff;
+    line-height: 1.3;
+  }
+  .s-quote-line {
+    position: absolute;
+    top: 178px; left: 72px;
+    width: 72px; height: 4px; background: var(--red);
+  }
+  .s-quote-text {
+    position: absolute;
+    top: 218px; left: 72px; right: var(--sr);
+    font-family: 'Playfair Display', serif;
+    font-size: var(--fs-quote, 56px); font-style: italic;
+    color: white; line-height: 1.25;
+  }
+  .s-quote-attr {
+    position: absolute;
+    top: 820px; left: 72px;
+    font-family: 'Playfair Display', serif;
+    font-size: var(--fs-quote-attr, 28px);
+    font-style: italic;
+    color: #ffffff;
+    opacity: 0.95;
+  }
+  .s-ctx-label {
+    position: absolute;
+    top: 178px; left: 72px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: var(--fs-ctx-label, 22px);
+    font-weight: 700;
+    color: var(--red);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+  .s-ctx-text {
+    position: absolute;
+    top: 228px; left: 72px; right: var(--sr);
+    font-family: 'Barlow', sans-serif;
+    font-size: var(--fs-ctx, 42px);
+    font-weight: 400;
+    color: #ffffff;
+    line-height: 1.4;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">NEP<span>TURNS</span></div>
+  <div class="nav-tag">Carousel Generator</div>
+</header>
+
+<div class="app">
+
+  <!-- LEFT PANEL -->
+  <div class="panel" id="formPanel">
+
+    <div>
+      <div class="section-title">Content Type</div>
+      <div class="template-tabs">
+        <button class="tab active" onclick="switchType('vision')">Vision Post<br><span style="font-size:9px;opacity:.5;font-weight:400;letter-spacing:0">Inspire & Lead</span></button>
+        <button class="tab" onclick="switchType('debate')">Debate Post<br><span style="font-size:9px;opacity:.5;font-weight:400;letter-spacing:0">Hot Take</span></button>
+        <button class="tab" onclick="switchType('story')">Story Post<br><span style="font-size:9px;opacity:.5;font-weight:400;letter-spacing:0">Real Journey</span></button>
+        <button class="tab" onclick="switchType('value')">Value Post<br><span style="font-size:9px;opacity:.5;font-weight:400;letter-spacing:0">Tips & Lists</span></button>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- TEMPLATE B fields (Vision / Debate / Value) -->
+    <div id="fields-B">
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="field-group">
+          <div class="section-title">Cover Slide</div>
+          <div class="field-label">Eyebrow label</div>
+          <input type="text" id="b-eyebrow" placeholder="e.g. THE REAL TALK" oninput="liveUpdate()">
+          <div class="field-label" style="margin-top:10px;">Main headline</div>
+          <textarea id="b-headline" placeholder="Nepal just got its first stable govt in 27 years." rows="3" oninput="liveUpdate()"></textarea>
+          <div class="field-label" style="margin-top:10px;">Sub text (swipe teaser)</div>
+          <input type="text" id="b-sub" placeholder="Here's what that means for you" oninput="liveUpdate()">
+        </div>
+
+        <hr class="divider">
+        <div class="section-title">Content Points</div>
+        <div class="points-list" id="pointsList"></div>
+        <button class="add-point" onclick="addPoint()">+ Add Point</button>
+
+        <hr class="divider">
+        <div class="toggle-row">
+          <div class="toggle-label">Include honest take slide</div>
+          <button class="toggle" id="honestToggle" onclick="toggleHonest()"></button>
+        </div>
+        <div id="honestFields" style="display:none;flex-direction:column;gap:8px;">
+          <div class="field-label">Honest take text</div>
+          <textarea id="b-honest" placeholder="The hard truth about this..." rows="3" oninput="liveUpdate()"></textarea>
+        </div>
+
+        <hr class="divider">
+        <div class="section-title">CTA Slide</div>
+        <div class="field-group">
+          <div class="field-label">Question / closing thought</div>
+          <textarea id="b-cta-main" placeholder="Are you planning your Nepturn?" rows="2" oninput="liveUpdate()"></textarea>
+          <div class="field-label" style="margin-top:10px;">Action text (big)</div>
+          <input type="text" id="b-cta-action" placeholder="JOIN THE COMMUNITY" oninput="liveUpdate()">
+          <div class="field-label" style="margin-top:10px;">Sub text (small)</div>
+          <input type="text" id="b-cta-sub" placeholder="Link in bio — @nepturns" oninput="liveUpdate()">
+        </div>
+      </div>
+    </div>
+
+    <!-- TEMPLATE A fields (Story) -->
+    <div id="fields-A" style="display:none;">
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="field-group">
+          <div class="section-title">Cover Slide</div>
+          <div class="field-label">Story series label</div>
+          <input type="text" id="a-series" placeholder="Return Story #4" oninput="liveUpdate()">
+          <div class="field-label" style="margin-top:10px;">Hook line (italic)</div>
+          <input type="text" id="a-hook" placeholder="I left at 22." oninput="liveUpdate()">
+          <div class="field-label" style="margin-top:10px;">Impact line (big red)</div>
+          <input type="text" id="a-impact" placeholder="I came back at 27." oninput="liveUpdate()">
+          <div class="field-label" style="margin-top:10px;">Supporting line</div>
+          <input type="text" id="a-support" placeholder="And I would do it again." oninput="liveUpdate()">
+        </div>
+
+        <hr class="divider">
+        <div class="section-title">Context Slide</div>
+        <div class="field-group">
+          <div class="field-label">Context label</div>
+          <input type="text" id="a-ctx-label" placeholder="THE BACKGROUND" oninput="liveUpdate()">
+          <div class="field-label" style="margin-top:8px;">Context text</div>
+          <textarea id="a-ctx-text" placeholder="She worked in Brisbane for 5 years as a nurse. Saved every dollar. Sent half home." rows="3" oninput="liveUpdate()"></textarea>
+        </div>
+
+        <hr class="divider">
+        <div class="section-title">Story Quotes (up to 3)</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="field-group">
+            <div class="field-label">Quote 1</div>
+            <textarea id="a-q1" placeholder='"The hardest part wasn&apos;t the flight."' rows="3" oninput="liveUpdate()"></textarea>
+          </div>
+          <div class="field-group">
+            <div class="field-label">Quote 2</div>
+            <textarea id="a-q2" placeholder='"6 months in, I had my first client."' rows="2" oninput="liveUpdate()"></textarea>
+          </div>
+          <div class="field-group">
+            <div class="field-label">Quote 3 (optional)</div>
+            <textarea id="a-q3" placeholder="Leave blank to skip" rows="2" oninput="liveUpdate()"></textarea>
+          </div>
+          <div class="field-group">
+            <div class="field-label">Attribution</div>
+            <input type="text" id="a-attr" placeholder="— Anonymous, returned 2024" oninput="liveUpdate()">
+          </div>
+        </div>
+
+        <hr class="divider">
+        <div class="section-title">Engagement Box</div>
+        <div class="field-group">
+          <div class="field-label">Box label</div>
+          <input type="text" id="a-box-label" placeholder="DROP A COMMENT" oninput="liveUpdate()">
+          <div class="field-label" style="margin-top:8px;">Box text</div>
+          <textarea id="a-box-text" placeholder="I left Nepal with 50,000. I'm going back with ___" rows="2" oninput="liveUpdate()"></textarea>
+        </div>
+
+        <hr class="divider">
+        <div class="section-title">CTA Slide</div>
+        <div class="field-group">
+          <div class="field-label">Closing question</div>
+          <input type="text" id="a-cta" placeholder="Are you a Nepturn? Share your story." oninput="liveUpdate()">
+          <div class="field-label" style="margin-top:8px;">Sub text</div>
+          <input type="text" id="a-cta-sub" placeholder="DM us or link in bio" oninput="liveUpdate()">
+        </div>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="section-title">Typography</div>
+    <p class="typo-section-note">Global scale multiplies every size below. Set pixel sizes as your “100%” baseline.</p>
+    <div class="field-group">
+      <div class="field-label">Global text scale (%)</div>
+      <input type="number" id="typo-scale" value="100" min="70" max="140" step="5" oninput="liveUpdate()">
+    </div>
+
+    <div class="field-group" style="margin-top:12px;">
+      <div class="field-label">First-slide vertical bar — text</div>
+      <input type="text" id="side-label" placeholder="Empty = auto (VISION, DEBATE, …)" oninput="liveUpdate()">
+    </div>
+
+    <div class="typo-grid">
+      <div>
+        <span class="mini-label">Bar size (px)</span>
+        <input type="number" id="fs-side-label" value="36" min="12" max="120" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Bar letter-spacing (px)</span>
+        <input type="number" id="side-label-spacing" value="14" min="0" max="48" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Handle (px)</span>
+        <input type="number" id="fs-handle" value="26" min="12" max="48" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Swipe arrow (px)</span>
+        <input type="number" id="fs-swipe" value="28" min="14" max="56" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Footer tagline (px)</span>
+        <input type="number" id="fs-footer-text" value="20" min="10" max="40" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Footer handle (px)</span>
+        <input type="number" id="fs-footer-handle" value="22" min="10" max="44" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Cover eyebrow (px)</span>
+        <input type="number" id="fs-eyebrow" value="32" min="14" max="72" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Cover headline (px)</span>
+        <input type="number" id="fs-cover-headline" value="106" min="40" max="200" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Cover sub (px)</span>
+        <input type="number" id="fs-cover-sub" value="34" min="14" max="80" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Cover ghost # (px)</span>
+        <input type="number" id="fs-cover-ghost" value="320" min="120" max="480" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Point big # (px)</span>
+        <input type="number" id="fs-pt-ghost" value="260" min="100" max="400" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Point title (px)</span>
+        <input type="number" id="fs-pt-title" value="88" min="32" max="160" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Point body (px)</span>
+        <input type="number" id="fs-pt-body" value="38" min="16" max="72" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Honest label (px)</span>
+        <input type="number" id="fs-honest-label" value="22" min="10" max="40" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Honest text (px)</span>
+        <input type="number" id="fs-honest" value="46" min="18" max="90" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">CTA question (px)</span>
+        <input type="number" id="fs-cta-main" value="54" min="20" max="100" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">CTA action (px)</span>
+        <input type="number" id="fs-cta-action" value="52" min="20" max="100" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">CTA sub (px)</span>
+        <input type="number" id="fs-cta-sub" value="30" min="14" max="64" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Story series (px)</span>
+        <input type="number" id="fs-story-eyebrow" value="28" min="12" max="56" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Story hook (px)</span>
+        <input type="number" id="fs-story-h" value="86" min="28" max="160" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Story impact (px)</span>
+        <input type="number" id="fs-story-big" value="128" min="40" max="220" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Story support (px)</span>
+        <input type="number" id="fs-story-sub" value="50" min="18" max="100" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Quote text (px)</span>
+        <input type="number" id="fs-quote" value="56" min="20" max="100" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Quote attribution (px)</span>
+        <input type="number" id="fs-quote-attr" value="28" min="12" max="48" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Context label (px)</span>
+        <input type="number" id="fs-ctx-label" value="22" min="10" max="40" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Context text (px)</span>
+        <input type="number" id="fs-ctx" value="42" min="16" max="80" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Box label (px)</span>
+        <input type="number" id="fs-box-label" value="20" min="10" max="40" step="1" oninput="liveUpdate()">
+      </div>
+      <div>
+        <span class="mini-label">Box text (px)</span>
+        <input type="number" id="fs-box-text" value="34" min="14" max="72" step="1" oninput="liveUpdate()">
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div>
+      <div class="section-title">Slide order</div>
+      <p class="order-hint">Drag handles to reorder middle slides. Cover and CTA stay first and last.</p>
+      <div class="order-list" id="orderList"></div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="section-title">Account</div>
+    <div class="field-group">
+      <div class="field-label">Handle</div>
+      <input type="text" id="handle" value="@nepturns" oninput="liveUpdate()">
+      <div class="field-label" style="margin-top:8px;">Footer tagline</div>
+      <input type="text" id="footer-text" value="Follow for the full return journey" oninput="liveUpdate()">
+    </div>
+
+    <div class="slide-count-row">
+      <div class="slide-count-label">Total slides</div>
+      <div class="slide-count-num" id="slideCountDisplay">—</div>
+    </div>
+
+    <div id="statusBar" class="status-bar">Generating...</div>
+  <div id="exportProgressWrap" class="export-progress-wrap" aria-hidden="true">
+    <div class="export-progress-bar" id="exportProgressBar"></div>
+  </div>
+    <button class="btn-generate" id="generateBtn" onclick="generateAll()">⬇ Export All Slides as PNG</button>
+
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="preview-panel">
+    <div class="preview-header">
+      <div class="preview-title">Live Preview</div>
+      <button class="btn-download" id="dlBtn" onclick="generateAll()">Export ZIP</button>
+    </div>
+    <div class="slides-grid" id="slidesGrid">
+      <div class="empty-state">
+        <div class="empty-icon">&#9654;</div>
+        <div class="empty-title">Fill in the form</div>
+        <div class="empty-desc">Your slides preview here as you type. Hit Export to download 1080×1350 PNGs.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── INLINE SCRIPTS ── -->
+<script>
+/* ═══════════════════════════════
+   STATE
+═══════════════════════════════ */
+function uid() { return 'p_' + Math.random().toString(36).slice(2, 11); }
+
+let currentType = 'vision';
+let honestOn = false;
+let points = [{ id: uid(), title: '', body: '' }, { id: uid(), title: '', body: '' }];
+/** Middle slides only: point ids and optional 'honest' */
+let statementMiddleOrder = [points[0].id, points[1].id];
+/** Story middle keys */
+let storyOrder = ['ctx', 'q1', 'q2', 'q3', 'box'];
+let debounceTimer;
+let lastOrderSnapshot = '';
+
+/* ═══════════════════════════════
+   HELPERS
+═══════════════════════════════ */
+function g(id) {
+  const el = document.getElementById(id);
+  return el ? (el.value || '') : '';
+}
+
+function dayLabel() {
+  return { vision:'VISION', debate:'DEBATE', story:'STORY', value:'VALUE' }[currentType] || 'NEPTURNS';
+}
+
+function sideLabelText() {
+  const t = g('side-label').trim();
+  return t || dayLabel();
+}
+
+/** Base px from input id, multiplied by global typo-scale */
+function fsPx(id, base) {
+  const v = parseInt(g(id), 10);
+  const raw = Number.isFinite(v) && v > 0 ? v : base;
+  const sc = (parseInt(g('typo-scale'), 10) || 100) / 100;
+  return Math.max(8, Math.round(raw * sc));
+}
+
+function getTypographyStyle() {
+  const slTrack = parseInt(g('side-label-spacing'), 10);
+  const trackPx = Number.isFinite(slTrack) ? Math.max(0, Math.min(48, slTrack)) : 14;
+  return [
+    `--fs-side-label:${fsPx('fs-side-label', 36)}px`,
+    `--side-label-tracking:${trackPx}px`,
+    `--fs-handle:${fsPx('fs-handle', 26)}px`,
+    `--fs-swipe:${fsPx('fs-swipe', 28)}px`,
+    `--fs-footer-text:${fsPx('fs-footer-text', 20)}px`,
+    `--fs-footer-handle:${fsPx('fs-footer-handle', 22)}px`,
+    `--fs-eyebrow:${fsPx('fs-eyebrow', 32)}px`,
+    `--fs-story-eyebrow:${fsPx('fs-story-eyebrow', 28)}px`,
+    `--fs-cover-headline:${fsPx('fs-cover-headline', 106)}px`,
+    `--fs-cover-sub:${fsPx('fs-cover-sub', 34)}px`,
+    `--fs-cover-ghost:${fsPx('fs-cover-ghost', 320)}px`,
+    `--fs-pt-ghost:${fsPx('fs-pt-ghost', 260)}px`,
+    `--fs-pt-title:${fsPx('fs-pt-title', 88)}px`,
+    `--fs-pt-body:${fsPx('fs-pt-body', 38)}px`,
+    `--fs-honest-label:${fsPx('fs-honest-label', 22)}px`,
+    `--fs-honest:${fsPx('fs-honest', 46)}px`,
+    `--fs-cta-main:${fsPx('fs-cta-main', 54)}px`,
+    `--fs-cta-action:${fsPx('fs-cta-action', 52)}px`,
+    `--fs-cta-sub:${fsPx('fs-cta-sub', 30)}px`,
+    `--fs-story-h:${fsPx('fs-story-h', 86)}px`,
+    `--fs-story-big:${fsPx('fs-story-big', 128)}px`,
+    `--fs-story-sub:${fsPx('fs-story-sub', 50)}px`,
+    `--fs-quote:${fsPx('fs-quote', 56)}px`,
+    `--fs-quote-attr:${fsPx('fs-quote-attr', 28)}px`,
+    `--fs-ctx-label:${fsPx('fs-ctx-label', 22)}px`,
+    `--fs-ctx:${fsPx('fs-ctx', 42)}px`,
+    `--fs-box-label:${fsPx('fs-box-label', 20)}px`,
+    `--fs-box-text:${fsPx('fs-box-text', 34)}px`,
+  ].join(';');
+}
+
+function syncStoryOrder() {
+  const have = new Set(['ctx', 'q1', 'box']);
+  if (g('a-q2').trim()) have.add('q2');
+  if (g('a-q3').trim()) have.add('q3');
+  storyOrder = storyOrder.filter(k => have.has(k));
+  for (const k of ['ctx', 'q1', 'q2', 'q3', 'box']) {
+    if (have.has(k) && !storyOrder.includes(k)) storyOrder.push(k);
+  }
+}
+
+function getStorySegments() {
+  syncStoryOrder();
+  const have = new Set(['ctx', 'q1', 'box']);
+  if (g('a-q2').trim()) have.add('q2');
+  if (g('a-q3').trim()) have.add('q3');
+  return storyOrder.filter(k => have.has(k));
+}
+
+function getStatementMiddleKeys() {
+  const ids = new Set(points.map(p => p.id));
+  return statementMiddleOrder.filter(k => {
+    if (k === 'honest') return honestOn;
+    return ids.has(k);
+  });
+}
+
+function getSlideCount() {
+  if (currentType === 'story') {
+    return 1 + getStorySegments().length + 1;
+  }
+  return 1 + getStatementMiddleKeys().length + 1;
+}
+
+function getSlideLabels(total) {
+  if (currentType === 'story') {
+    const labels = ['Cover Slide'];
+    for (let i = 1; i <= total - 2; i++) labels.push(`Point ${i}`);
+    labels.push('CTA Slide');
+    return labels;
+  }
+  const labels = ['Cover Slide'];
+  getStatementMiddleKeys().forEach((k) => {
+    if (k === 'honest') labels.push('Honest Take');
+    else {
+      const pi = points.findIndex(p => p.id === k);
+      labels.push(pi >= 0 ? `Point ${pi + 1}` : 'Point');
+    }
+  });
+  labels.push('CTA Slide');
+  return labels;
+}
+
+/* ═══════════════════════════════
+   PIE SVG (small inline)
+═══════════════════════════════ */
+function pieSVG(current, total, size = 64) {
+  const r = size / 2 - 6;
+  const cx = size / 2, cy = size / 2;
+  const gap = 0.09;
+  let segs = '';
+  for (let i = 0; i < total; i++) {
+    const sa = (i / total) * 2 * Math.PI - Math.PI / 2 + gap;
+    const ea = ((i + 1) / total) * 2 * Math.PI - Math.PI / 2 - gap;
+    const x1 = cx + r * Math.cos(sa), y1 = cy + r * Math.sin(sa);
+    const x2 = cx + r * Math.cos(ea), y2 = cy + r * Math.sin(ea);
+    const large = (1 / total) > 0.5 ? 1 : 0;
+    const filled = i < current;
+    segs += `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large} 1 ${x2},${y2} Z" fill="${filled ? '#C8341A' : 'rgba(200,52,26,0.18)'}" />`;
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${segs}</svg>`;
+}
+
+/* ═══════════════════════════════
+   SHARED CHROME — side bar + arrow: first slide only; last matches full-width slides
+═══════════════════════════════ */
+function chrome(idx, total, isFirst, isLast) {
+  const handle = g('handle') || '@nepturns';
+  const footer = g('footer-text') || 'Follow for the full return journey';
+  const pie = pieSVG(idx + 1, total, 64);
+  const side = sideLabelText();
+  const sideArrow = isFirst ? '<div class="s-panel-arrow"></div>' : '';
+  const sideBlock = isFirst
+    ? `<div class="s-side-panel"><div class="s-side-label-wrap"><span class="s-side-label-text">${escHtml(side)}</span></div></div>${sideArrow}`
+    : '';
+  const decoRail = !isLast ? '<div class="s-chrome-rail"></div>' : '';
+  const decoDots = !isFirst && !isLast
+    ? '<div class="s-chrome-dots"><span></span><span></span><span></span></div>'
+    : '';
+
+  return `
+    <div class="s-brush-top"></div>
+    <div class="s-brush-bottom"></div>
+    ${sideBlock}
+    ${decoRail}
+    ${decoDots}
+    <div class="s-handle">${escHtml(handle)}</div>
+    <div class="s-pie">${pie}</div>
+    <div class="s-corner"></div>
+    ${!isLast ? `<div class="s-swipe"><div class="s-swipe-line"></div><div class="s-swipe-arrow">→</div></div>` : ''}
+    <div class="s-footer">
+      <div class="s-footer-text">${escHtml(footer)}</div>
+      <div class="s-footer-handle">${escHtml(handle)}</div>
+    </div>
+  `;
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/* ═══════════════════════════════
+   SLIDE BUILDERS
+═══════════════════════════════ */
+function buildSlide(idx, total) {
+  const isFirst = idx === 0;
+  const isLast = idx === total - 1;
+  const ch = chrome(idx, total, isFirst, isLast);
+  const inner = currentType === 'story'
+    ? buildStorySlide(idx, total, isFirst, isLast)
+    : buildStatementSlide(idx, total, isFirst, isLast);
+  const cls = isFirst
+    ? 'slide'
+    : isLast
+      ? 'slide slide--no-side slide--last'
+      : 'slide slide--no-side';
+  return `<div class="${cls}" style="${getTypographyStyle()}">${ch}${inner}</div>`;
+}
+
+/* ── STATEMENT (Vision / Debate / Value) ── */
+function buildStatementSlide(idx, total, isFirst, isLast) {
+  let inner = '';
+
+  if (isFirst) {
+    inner = `
+      <div class="s-cover-main">
+        <div class="s-cover-accent"></div>
+        <div class="s-cover-eyebrow">${escHtml(g('b-eyebrow'))}</div>
+        <div class="s-cover-headline">${escHtml(g('b-headline'))}</div>
+        <div class="s-cover-sub">${escHtml(g('b-sub'))}</div>
+      </div>
+      <div class="s-cover-ghost">1</div>
+    `;
+  } else if (isLast) {
+    inner = `
+      <div class="s-cta-min">
+        <div class="s-cta-min-topbar"></div>
+        <p class="s-cta-min-q">${escHtml(g('b-cta-main'))}</p>
+        <div class="s-cta-min-divider"></div>
+        <p class="s-cta-min-action">${escHtml(g('b-cta-action'))}</p>
+        <p class="s-cta-min-sub">${escHtml(g('b-cta-sub'))}</p>
+        <div class="s-cta-min-accent" aria-hidden="true"></div>
+      </div>
+    `;
+  } else {
+    const mids = getStatementMiddleKeys();
+    const seg = mids[idx - 1];
+    if (seg === 'honest') {
+      inner = `
+        <div class="s-honest-bar"></div>
+        <div class="s-honest-label">THE HONEST TRUTH</div>
+        <div class="s-honest-text">${escHtml(g('b-honest'))}</div>
+      `;
+    } else {
+      const pt = points.find(p => p.id === seg) || { title: '', body: '' };
+      inner = `
+        <div class="s-pt-ghost">${String(idx).padStart(2, '0')}</div>
+        <div class="s-pt-title">${escHtml(pt.title)}</div>
+        <div class="s-pt-divider"></div>
+        <div class="s-pt-body">${escHtml(pt.body)}</div>
+      `;
+    }
+  }
+
+  return inner;
+}
+
+/* ── STORY ── */
+function buildStorySlide(idx, total, isFirst, isLast) {
+  let inner = '';
+
+  if (isFirst) {
+    inner = `
+      <div class="s-story-cover">
+        <div class="s-cover-accent"></div>
+        <div class="s-story-eyebrow">${escHtml(g('a-series'))}</div>
+        <div class="s-story-headline">${escHtml(g('a-hook'))}</div>
+        <div class="s-story-big">${escHtml(g('a-impact'))}</div>
+        <div class="s-story-sub">${escHtml(g('a-support'))}</div>
+      </div>
+    `;
+  } else if (isLast) {
+    inner = `
+      <div class="s-cta-min">
+        <div class="s-cta-min-topbar"></div>
+        <p class="s-cta-min-q">${escHtml(g('a-cta'))}</p>
+        <div class="s-cta-min-divider"></div>
+        <p class="s-cta-min-action">SAVE IT. SHARE IT.</p>
+        <p class="s-cta-min-sub">${escHtml(g('a-cta-sub'))}</p>
+        <div class="s-cta-min-accent" aria-hidden="true"></div>
+      </div>
+    `;
+  } else {
+    const mids = getStorySegments();
+    const key = mids[idx - 1];
+
+    if (key === 'ctx') {
+      inner = `
+        <div class="s-ctx-label">${escHtml(g('a-ctx-label'))}</div>
+        <div class="s-ctx-text">${escHtml(g('a-ctx-text'))}</div>
+      `;
+    } else if (key === 'q1' || key === 'q2' || key === 'q3') {
+      const qval = g(`a-${key}`);
+      inner = `
+        <div class="s-quote-line"></div>
+        <div class="s-quote-text">${escHtml(qval)}</div>
+        <div class="s-quote-attr">${escHtml(g('a-attr'))}</div>
+      `;
+    } else if (key === 'box') {
+      inner = `
+        <div class="s-story-box">
+          <div class="s-story-box-label">${escHtml(g('a-box-label'))}</div>
+          <div class="s-story-box-text">${escHtml(g('a-box-text'))}</div>
+        </div>
+      `;
+    }
+  }
+
+  return inner;
+}
+
+/* ═══════════════════════════════
+   RENDER PREVIEWS
+═══════════════════════════════ */
+function maybeRenderOrderList() {
+  const snap = currentType === 'story'
+    ? 'story:' + storyOrder.join(',') + '|' + getStorySegments().join(',')
+    : 'stmt:' + statementMiddleOrder.join(',');
+  if (snap === lastOrderSnapshot) return;
+  lastOrderSnapshot = snap;
+  renderOrderLists();
+}
+
+function renderOrderLists() {
+  const el = document.getElementById('orderList');
+  if (!el) return;
+  el.innerHTML = '';
+  if (currentType === 'story') {
+    syncStoryOrder();
+    const keys = getStorySegments();
+    const labels = { ctx: 'Context', q1: 'Quote 1', q2: 'Quote 2', q3: 'Quote 3', box: 'Engagement box' };
+    keys.forEach(k => {
+      const row = document.createElement('div');
+      row.className = 'order-item';
+      row.draggable = true;
+      row.dataset.key = k;
+      row.textContent = '⋮ ' + (labels[k] || k);
+      el.appendChild(row);
+    });
+  } else {
+    getStatementMiddleKeys().forEach(k => {
+      const row = document.createElement('div');
+      row.className = 'order-item';
+      row.draggable = true;
+      row.dataset.key = k;
+      if (k === 'honest') row.textContent = '⋮ Honest take';
+      else {
+        const pi = points.findIndex(p => p.id === k);
+        row.textContent = '⋮ Point ' + (pi + 1);
+      }
+      el.appendChild(row);
+    });
+  }
+  bindOrderDrag(el);
+}
+
+let orderDragKey = null;
+
+function bindOrderDrag(container) {
+  container.querySelectorAll('.order-item').forEach(item => {
+    item.addEventListener('dragstart', e => {
+      orderDragKey = item.dataset.key;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', orderDragKey);
+    });
+    item.addEventListener('dragend', () => {
+      container.querySelectorAll('.order-item').forEach(x => x.classList.remove('drag-over'));
+    });
+    item.addEventListener('dragover', e => {
+      e.preventDefault();
+      item.classList.add('drag-over');
+    });
+    item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      item.classList.remove('drag-over');
+      const targetKey = item.dataset.key;
+      const from = orderDragKey;
+      if (!from || from === targetKey) return;
+      if (currentType === 'story') {
+        const arr = [...storyOrder];
+        reorderArrayInPlace(arr, from, targetKey);
+        storyOrder = arr;
+      } else {
+        const arr = [...statementMiddleOrder];
+        reorderArrayInPlace(arr, from, targetKey);
+        statementMiddleOrder = arr;
+      }
+      orderDragKey = null;
+      lastOrderSnapshot = '';
+      renderOrderLists();
+      liveUpdate();
+    });
+  });
+}
+
+function reorderArrayInPlace(arr, fromKey, toKey) {
+  const fi = arr.indexOf(fromKey);
+  if (fi < 0 || fromKey === toKey) return;
+  arr.splice(fi, 1);
+  const insertAt = arr.indexOf(toKey);
+  if (insertAt < 0) return;
+  arr.splice(insertAt, 0, fromKey);
+}
+
+function renderPreviews() {
+  const grid = document.getElementById('slidesGrid');
+  const total = getSlideCount();
+  document.getElementById('slideCountDisplay').textContent = total;
+  grid.innerHTML = '';
+
+  const labels = getSlideLabels(total);
+
+  for (let i = 0; i < total; i++) {
+    const html = buildSlide(i, total);
+    const label = labels[i] || `Slide ${i + 1}`;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'slide-wrapper';
+    wrapper.innerHTML = `
+      <div class="slide-label-preview">${label}</div>
+      <div class="slide-preview-box">
+        <div class="slide-scale-wrap">
+          <div class="slide-canvas">${html}</div>
+        </div>
+      </div>
+    `;
+    grid.appendChild(wrapper);
+  }
+
+  document.getElementById('dlBtn').classList.add('visible');
+  maybeRenderOrderList();
+}
+
+function liveUpdate() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(renderPreviews, 150);
+}
+
+async function ensureHtml2Canvas() {
+  if (typeof html2canvas !== 'undefined') return true;
+  for (let i = 0; i < 200; i++) {
+    await new Promise(r => setTimeout(r, 50));
+    if (typeof html2canvas !== 'undefined') return true;
+  }
+  return false;
+}
+
+/** Let the browser paint status / progress before heavy work */
+async function flushUI() {
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+}
+
+/* ═══════════════════════════════
+   FORM CONTROLS
+═══════════════════════════════ */
+function switchType(type) {
+  currentType = type;
+  lastOrderSnapshot = '';
+  const tabs = document.querySelectorAll('.tab');
+  ['vision', 'debate', 'story', 'value'].forEach((t, i) => {
+    tabs[i].classList.toggle('active', t === type);
+  });
+  const isStory = type === 'story';
+  document.getElementById('fields-A').style.display = isStory ? 'block' : 'none';
+  document.getElementById('fields-B').style.display = isStory ? 'none' : 'block';
+  liveUpdate();
+}
+
+function toggleHonest() {
+  honestOn = !honestOn;
+  document.getElementById('honestToggle').classList.toggle('on', honestOn);
+  document.getElementById('honestFields').style.display = honestOn ? 'flex' : 'none';
+  if (honestOn) {
+    if (!statementMiddleOrder.includes('honest')) statementMiddleOrder.push('honest');
+  } else {
+    statementMiddleOrder = statementMiddleOrder.filter(k => k !== 'honest');
+  }
+  liveUpdate();
+}
+
+function addPoint() {
+  if (points.length >= 5) return;
+  const p = { id: uid(), title: '', body: '' };
+  points.push(p);
+  statementMiddleOrder.push(p.id);
+  renderPointInputs();
+  liveUpdate();
+}
+
+function removePoint(i) {
+  if (points.length <= 1) return;
+  const id = points[i].id;
+  points.splice(i, 1);
+  statementMiddleOrder = statementMiddleOrder.filter(k => k !== id);
+  renderPointInputs();
+  liveUpdate();
+}
+
+function updatePoint(i, key, val) {
+  points[i][key] = val;
+  liveUpdate();
+}
+
+function renderPointInputs() {
+  const list = document.getElementById('pointsList');
+  list.innerHTML = '';
+  points.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;flex-direction:column;gap:6px;padding:12px;background:#1a1a1a;border-radius:6px;border:1px solid #2a2a2a;';
+    div.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="point-num-badge">${i + 1}</div>
+        <input type="text" placeholder="Point title (big)" value="${escHtml(p.title)}"
+          oninput="updatePoint(${i},'title',this.value)" style="flex:1;">
+        ${points.length > 1 ? `<button onclick="removePoint(${i})" style="background:none;border:none;color:#555;cursor:pointer;font-size:20px;padding:0 4px;line-height:1;">×</button>` : ''}
+      </div>
+      <textarea placeholder="Supporting body text" oninput="updatePoint(${i},'body',this.value)"
+        rows="2" style="margin-left:32px;">${escHtml(p.body)}</textarea>
+    `;
+    list.appendChild(div);
+  });
+}
+
+/* ═══════════════════════════════
+   EXPORT — pure canvas, no external lib
+═══════════════════════════════ */
+async function generateAll() {
+  const btn = document.getElementById('generateBtn');
+  const status = document.getElementById('statusBar');
+  const progWrap = document.getElementById('exportProgressWrap');
+  const progBar = document.getElementById('exportProgressBar');
+  btn.disabled = true;
+  btn.textContent = 'Working...';
+  status.classList.add('visible');
+  if (progWrap) progWrap.classList.add('visible');
+  if (progBar) progBar.style.width = '0%';
+
+  status.textContent = 'Loading renderer…';
+  await flushUI();
+  const h2cOk = await ensureHtml2Canvas();
+  if (!h2cOk) {
+    status.textContent = 'Error: html2canvas failed to load. Check your network and refresh.';
+    if (progWrap) progWrap.classList.remove('visible');
+    btn.disabled = false;
+    btn.textContent = '⬇ Export All Slides as PNG';
+    return;
+  }
+
+  const total = getSlideCount();
+  const blobs = [];
+
+  try {
+    await document.fonts.ready;
+  } catch (e) {}
+
+  for (let i = 0; i < total; i++) {
+    const pct = Math.round(((i + 0.35) / total) * 100);
+    status.textContent = `Rendering slide ${i + 1} of ${total}…`;
+    if (progBar) progBar.style.width = pct + '%';
+    await flushUI();
+
+    const html = buildSlide(i, total);
+    const blob = await slideToBlob(html);
+    if (!blob || blob.size < 50) {
+      status.textContent = `Slide ${i + 1} failed to render — try again.`;
+      if (progWrap) progWrap.classList.remove('visible');
+      btn.disabled = false;
+      btn.textContent = '⬇ Export All Slides as PNG';
+      return;
+    }
+    blobs.push({ name: `slide-${String(i + 1).padStart(2, '0')}.png`, blob });
+    if (progBar) progBar.style.width = Math.round(((i + 1) / total) * 100) + '%';
+    await flushUI();
+  }
+
+  status.textContent = 'Packaging ZIP…';
+  if (progBar) progBar.style.width = '100%';
+  await flushUI();
+
+  const zip = await buildZip(blobs);
+  const url = URL.createObjectURL(zip);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `nepturns-${currentType}-${Date.now()}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+  status.textContent = '✓ Done! Check your downloads.';
+  if (progWrap) progWrap.classList.remove('visible');
+  if (progBar) progBar.style.width = '0%';
+  setTimeout(() => {
+    status.classList.remove('visible');
+    status.textContent = '';
+  }, 4000);
+
+  btn.disabled = false;
+  btn.textContent = '⬇ Export All Slides as PNG';
+}
+
+/* ── Render slide to PNG: same document + html2canvas (styles + fonts apply) ── */
+async function slideToBlob(slideHtml) {
+  const W = 1080;
+  const H = 1350;
+  const wrap = document.createElement('div');
+  wrap.setAttribute('aria-hidden', 'true');
+  wrap.style.cssText = `position:fixed;left:-12000px;top:0;width:${W}px;height:${H}px;overflow:hidden;pointer-events:none;z-index:0;`;
+  wrap.innerHTML = slideHtml;
+  document.body.appendChild(wrap);
+  const el = wrap.querySelector('.slide');
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  await new Promise(r => setTimeout(r, 80));
+
+  let blob = null;
+  try {
+    const canvas = await html2canvas(el, {
+      width: W,
+      height: H,
+      scale: 1,
+      backgroundColor: '#0d0d0d',
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      windowWidth: W,
+      windowHeight: H,
+    });
+    blob = await new Promise(res => canvas.toBlob(res, 'image/png', 1));
+  } catch (err) {
+    console.error(err);
+  } finally {
+    wrap.remove();
+  }
+
+  if (!blob || blob.size < 50) {
+    const c = document.createElement('canvas');
+    c.width = W;
+    c.height = H;
+    const x = c.getContext('2d');
+    x.fillStyle = '#0d0d0d';
+    x.fillRect(0, 0, W, H);
+    x.fillStyle = '#888';
+    x.font = '24px sans-serif';
+    x.fillText('Render failed — check console', 40, 80);
+    blob = await new Promise(res => c.toBlob(res, 'image/png'));
+  }
+  return blob;
+}
+
+/* ── Build ZIP manually (no JSZip needed) ── */
+async function buildZip(files) {
+  // Simple ZIP builder in pure JS
+  const encoder = new TextEncoder();
+  const crc32 = makeCrc32();
+
+  const localHeaders = [];
+  const centralDir = [];
+  let offset = 0;
+
+  for (const { name, blob } of files) {
+    const data = new Uint8Array(await blob.arrayBuffer());
+    const nameBytes = encoder.encode(name);
+    const crc = crc32(data);
+    const size = data.length;
+    const now = dosDateTime();
+
+    // Local file header
+    const localHeader = new Uint8Array(30 + nameBytes.length);
+    const lv = new DataView(localHeader.buffer);
+    lv.setUint32(0, 0x04034b50, true);  // signature
+    lv.setUint16(4, 20, true);           // version needed
+    lv.setUint16(6, 0, true);            // flags
+    lv.setUint16(8, 0, true);            // compression (stored)
+    lv.setUint16(10, now.time, true);
+    lv.setUint16(12, now.date, true);
+    lv.setUint32(14, crc, true);
+    lv.setUint32(18, size, true);        // compressed
+    lv.setUint32(22, size, true);        // uncompressed
+    lv.setUint16(26, nameBytes.length, true);
+    lv.setUint16(28, 0, true);           // extra field len
+    localHeader.set(nameBytes, 30);
+
+    localHeaders.push({ header: localHeader, data, nameBytes, crc, size, now, offset });
+    offset += localHeader.length + data.length;
+  }
+
+  // Central directory
+  let cdSize = 0;
+  const cdParts = [];
+  for (const f of localHeaders) {
+    const cd = new Uint8Array(46 + f.nameBytes.length);
+    const cv = new DataView(cd.buffer);
+    cv.setUint32(0, 0x02014b50, true);
+    cv.setUint16(4, 20, true);
+    cv.setUint16(6, 20, true);
+    cv.setUint16(8, 0, true);
+    cv.setUint16(10, 0, true);
+    cv.setUint16(12, f.now.time, true);
+    cv.setUint16(14, f.now.date, true);
+    cv.setUint32(16, f.crc, true);
+    cv.setUint32(20, f.size, true);
+    cv.setUint32(24, f.size, true);
+    cv.setUint16(28, f.nameBytes.length, true);
+    cv.setUint16(30, 0, true);
+    cv.setUint16(32, 0, true);
+    cv.setUint16(34, 0, true);
+    cv.setUint16(36, 0, true);
+    cv.setUint32(38, 0, true);
+    cv.setUint32(42, f.offset, true);
+    cd.set(f.nameBytes, 46);
+    cdParts.push(cd);
+    cdSize += cd.length;
+  }
+
+  // End of central directory
+  const eocd = new Uint8Array(22);
+  const ev = new DataView(eocd.buffer);
+  ev.setUint32(0, 0x06054b50, true);
+  ev.setUint16(4, 0, true);
+  ev.setUint16(6, 0, true);
+  ev.setUint16(8, files.length, true);
+  ev.setUint16(10, files.length, true);
+  ev.setUint32(12, cdSize, true);
+  ev.setUint32(16, offset, true);
+  ev.setUint16(20, 0, true);
+
+  // Concatenate everything
+  const totalSize = localHeaders.reduce((s, f) => s + f.header.length + f.data.length, 0)
+    + cdParts.reduce((s, c) => s + c.length, 0) + eocd.length;
+  const out = new Uint8Array(totalSize);
+  let pos = 0;
+
+  for (const f of localHeaders) {
+    out.set(f.header, pos); pos += f.header.length;
+    out.set(f.data, pos);   pos += f.data.length;
+  }
+  for (const c of cdParts) {
+    out.set(c, pos); pos += c.length;
+  }
+  out.set(eocd, pos);
+
+  return new Blob([out], { type: 'application/zip' });
+}
+
+function dosDateTime() {
+  const d = new Date();
+  const date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  const time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+  return { date, time };
+}
+
+function makeCrc32() {
+  const table = new Uint32Array(256);
+  for (let i = 0; i < 256; i++) {
+    let c = i;
+    for (let j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    table[i] = c;
+  }
+  return function(data) {
+    let crc = 0xFFFFFFFF;
+    for (let i = 0; i < data.length; i++) crc = (crc >>> 8) ^ table[(crc ^ data[i]) & 0xFF];
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  };
+}
+
+/* ══════════════════════════════
+   INIT
+══════════════════════════════ */
+renderPointInputs();
+lastOrderSnapshot = '';
+renderPreviews();
+</script>
+
+</body>
+</html>
